@@ -209,5 +209,5 @@ elif [[ "$State" == "WiFi_Reconnecting" ]]; then
 elif [[ "$State" == "WiFi_Connected" ]]; then
   wifi_connected
 else
-  echo "Not Implemented"
+  echo "Unknown state: $State" && exit 2
 fi
