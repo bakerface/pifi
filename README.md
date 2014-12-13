@@ -1,4 +1,2 @@
-pifi
-====
-
-Wireless daemon for the Raspberry Pi
+# Pi-Fi
+**Wireless daemon for the Raspberry Pi**
