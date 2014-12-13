@@ -1,0 +1,213 @@
+#! /bin/bash
+
+ScriptDirectory="$(dirname $0)"
+Interface="$1"
+Hostapd="$ScriptDirectory/hostapd"
+ConfigFile="$ScriptDirectory/pifi-$Interface.conf"
+DhcpdConfigFile="$ScriptDirectory/pifi-$Interface-dhcpd.conf"
+HostapdConfigFile="$ScriptDirectory/pifi-$Interface-hostapd.conf"
+WpaConfigFile="$ScriptDirectory/pifi-$Interface-wpa.conf"
+
+State="Idle"
+AccessPointDriver="rtl871xdrv"
+AccessPointSsid="RaspberryPi"
+AccessPointPassphrase="raspberry"
+AccessPointChannel="6"
+AccessPointGateway="192.168.10.1"
+AccessPointSubnetMask="255.255.255.0"
+AccessPointSubnet="192.168.10.0"
+AccessPointFirst="192.168.10.100"
+AccessPointLast="192.168.10.200"
+AccessPointBroadcast="192.168.10.255"
+AccessPointDefaultLease="600"
+AccessPointMaxLease="7200"
+AccessPointDomain="local"
+WiFiDriver="wext"
+WiFiSsid="RaspberryPi"
+WiFiPassphrase="raspberry"
+WiFiTimeout="0"
+
+if [[ "$Interface" == "" ]]; then
+  echo "Usage: $0 INTERFACE [-i | -a | -w | -s]" && exit 1
+fi
+
+write_config() {
+  cat << EOF > $ConfigFile
+State="$State"
+AccessPointDriver="$AccessPointDriver"
+AccessPointSsid="$AccessPointSsid"
+AccessPointPassphrase="$AccessPointPassphrase"
+AccessPointChannel="$AccessPointChannel"
+AccessPointGateway="$AccessPointGateway"
+AccessPointSubnetMask="$AccessPointSubnetMask"
+AccessPointSubnet="$AccessPointSubnet"
+AccessPointFirst="$AccessPointFirst"
+AccessPointLast="$AccessPointLast"
+AccessPointBroadcast="$AccessPointBroadcast"
+AccessPointDefaultLease="$AccessPointDefaultLease"
+AccessPointMaxLease="$AccessPointMaxLease"
+AccessPointDomain="$AccessPointDomain"
+WiFiDriver="$WiFiDriver"
+WiFiSsid="$WiFiSsid"
+WiFiPassphrase="$WiFiPassphrase"
+WiFiTimeout="$WiFiTimeout"
+EOF
+}
+
+if [[ -f $ConfigFile ]]; then
+  . $ConfigFile
+fi
+
+ip_address() {
+  ifconfig $Interface | grep "inet " | awk '{print $2}' | cut -d':' -f2
+}
+
+disable_networking() {
+  killall dhcpd hostapd wpa_supplicant dhcpcd &> /dev/null
+  ifconfig $Interface down &> /dev/null
+  ifconfig $Interface 0.0.0.0 up &> /dev/null
+  ifconfig $Interface down &> /dev/null
+}
+
+host_ap() {
+  IpAddress=$(ip_address)
+
+  if [[ "$IpAddress" != "$AccessPointGateway" ]]; then
+    ifconfig $Interface down
+    ifconfig $Interface $AccessPointGateway netmask $AccessPointSubnetMask up
+  fi
+
+  DhcpdPid=$(pidof dhcpd)
+
+  if [[ "$DhcpdPid" == "" ]]; then
+    cat << EOF > $DhcpdConfigFile
+authoritative;
+
+subnet $AccessPointSubnet netmask $AccessPointSubnetMask {
+  range $AccessPointFirst $AccessPointLast;
+  option broadcast-address $AccessPointBroadcast;
+  option routers $AccessPointGateway;
+  default-lease-time $AccessPointDefaultLease;
+  max-lease-time $AccessPointMaxLease;
+  option domain-name "$AccessPointDomain";
+  option domain-name-servers 8.8.8.8, 8.8.4.4;
+}
+EOF
+
+    dhcpd -cf $DhcpdConfigFile $Interface &> /dev/null && rm $DhcpdConfigFile
+  fi
+
+  HostapdPid=$(pidof hostapd)
+
+  if [[ "$HostapdPid" == "" ]]; then
+    cat << EOF > $HostapdConfigFile
+interface=$Interface
+driver=$AccessPointDriver
+ssid=$AccessPointSsid
+hw_mode=g
+channel=$AccessPointChannel
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=0
+wpa=2
+wpa_passphrase=$AccessPointPassphrase
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=TKIP
+rsn_pairwise=CCMP
+EOF
+
+    $Hostapd -B $HostapdConfigFile &> /dev/null && rm $HostapdConfigFile
+  fi
+}
+
+wifi_connect() {
+  Now=$(date +%s)
+  IpAddress=$(ip_address)
+  WpaSupplicantPid=$(pidof wpa_supplicant)
+  DhcpcdPid=$(pidof dhcpcd)
+
+  if [[ "$IpAddress" != "" ]]; then
+    State="WiFi_Connected"
+    write_config
+  elif [[ $Now -gt $WiFiTimeout ]]; then
+    State="AccessPoint"
+    write_config
+  elif [[ "$WpaSupplicantPid" == "" ]]; then
+    wpa_passphrase "$WiFiSsid" "$WiFiPassphrase" > $WpaConfigFile
+    wpa_supplicant -B -D $WiFiDriver -i $Interface -c $WpaConfigFile &> /dev/null && rm $WpaConfigFile
+  elif [[ "$DhcpcdPid" == "" ]]; then
+    dhcpcd -b $Interface &> /dev/null
+  fi
+}
+
+wifi_reconnect() {
+  IpAddress=$(ip_address)
+  WpaSupplicantPid=$(pidof wpa_supplicant)
+  DhcpcdPid=$(pidof dhcpcd)
+
+  if [[ "$IpAddress" != "" ]]; then
+    State="WiFi_Connected"
+    write_config
+  elif [[ "$WpaSupplicantPid" == "" ]]; then
+    wpa_passphrase "$WiFiSsid" "$WiFiPassphrase" > $WpaConfigFile
+    wpa_supplicant -B -D $WiFiDriver -i $Interface -c $WpaConfigFile &> /dev/null && rm $WpaConfigFile
+  elif [[ "$DhcpcdPid" == "" ]]; then
+    dhcpcd -b $Interface &> /dev/null
+  fi
+}
+
+wifi_connected() {
+  IpAddress=$(ip_address)
+  WpaSupplicantPid=$(pidof wpa_supplicant)
+  DhcpcdPid=$(pidof dhcpcd)
+
+  if [[ "$IpAddress" == "" ]]; then
+    State="WiFi_Reconnecting"
+    write_config
+  elif [[ "$WpaSupplicantPid" == "" ]]; then
+    wpa_passphrase "$WiFiSsid" "$WiFiPassphrase" > $WpaConfigFile
+    wpa_supplicant -B -D $WiFiDriver -i $Interface -c $WpaConfigFile &> /dev/null && rm $WpaConfigFile
+  elif [[ "$DhcpcdPid" == "" ]]; then
+    dhcpcd -b $Interface &> /dev/null
+  fi
+}
+
+if [[ "$2" == "-a" ]]; then
+  State="AccessPoint"
+  AccessPointSsid="$3"
+  AccessPointPassphrase="$4"
+  write_config
+elif [[ "$2" == "-w" ]]; then
+  State="WiFi"
+  WiFiSsid="$3"
+  WiFiPassphrase="$4"
+  write_config
+elif [[ "$2" == "-i" ]]; then
+  State="Idle"
+  write_config 
+elif [[ "$2" == "-s" ]]; then
+  echo "$State"
+elif [[ "$2" != "" ]]; then
+  echo "Unknown option: $2" && exit 1
+elif [[ "$State" == "Idle" ]]; then
+  disable_networking
+elif [[ "$State" == "AccessPoint" ]]; then
+  State="AccessPoint_Hosting"
+  write_config
+  disable_networking
+elif [[ "$State" == "AccessPoint_Hosting" ]]; then
+  host_ap
+elif [[ "$State" == "WiFi" ]]; then
+  State="WiFi_Connecting"
+  WiFiTimeout=$(date -d 'today + 1 minutes' +%s)
+  write_config
+  disable_networking
+elif [[ "$State" == "WiFi_Connecting" ]]; then
+  wifi_connect
+elif [[ "$State" == "WiFi_Reconnecting" ]]; then
+  wifi_reconnect
+elif [[ "$State" == "WiFi_Connected" ]]; then
+  wifi_connected
+else
+  echo "Not Implemented"
+fi
