@@ -1,0 +1,10 @@
+#! /bin/bash
+
+ScriptDirectory=$(dirname $0)
+PiFi="$ScriptDirectory/pifi"
+
+while [ : ]; do
+  $PiFi $@
+  sleep 5
+done
+
