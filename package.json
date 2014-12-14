@@ -1,0 +1,32 @@
+{
+  "name": "pifi",
+  "version": "0.1.0",
+  "description": "Pi-Fi",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bakerface/pifi.git"
+  },
+  "keywords": [
+    "Swello"
+  ],
+  "author": "Christopher M. Baker",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bakerface/pifi/issues"
+  },
+  "homepage": "https://github.com/bakerface/pifi",
+  "devDependencies": {
+    "mocha": "^2.0.1",
+    "should": "^4.3.0"
+  },
+  "dependencies": {
+    "body-parser": "^1.10.0",
+    "express": "^4.10.4",
+    "morgan": "^1.5.0"
+  }
+}
