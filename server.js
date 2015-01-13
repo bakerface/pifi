@@ -22,14 +22,14 @@ app.get('/networks', function(req, res) {
   });
 });
 
-app.post('/access-point', function(req, res) {
-  exec('/share/pifi wlan0 -a "' + req.body.ssid + '" "' + req.body.passphrase + '"', function() {
+app.post('/networks', function(req, res) {
+  exec('/share/pifi wlan0 -w "' + req.body.ssid + '" "' + req.body.passphrase + '"', function() {
     res.status(200).end();
   });
 });
 
-app.post('/wifi', function(req, res) {
-  exec('/share/pifi wlan0 -w "' + req.body.ssid + '" "' + req.body.passphrase + '"', function() {
+app.post('/access-point', function(req, res) {
+  exec('/share/pifi wlan0 -a "' + req.body.ssid + '" "' + req.body.passphrase + '"', function() {
     res.status(200).end();
   });
 });
