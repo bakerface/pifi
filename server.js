@@ -15,6 +15,13 @@ app.get('/status', function(req, res) {
   });
 });
 
+app.get('/networks', function(req, res) {
+  exec('/share/pifi wlan0 -l', function(e, stdout) {
+    var networks = stdout.trim().split(',');
+    res.status(200).json(networks);
+  });
+});
+
 app.post('/access-point', function(req, res) {
   exec('/share/pifi wlan0 -a "' + req.body.ssid + '" "' + req.body.passphrase + '"', function() {
     res.status(200).end();

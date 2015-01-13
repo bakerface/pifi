@@ -28,5 +28,5 @@ fi
 
 if [[ -z $(docker ps | grep $container_name) ]]; then
   docker rm $container_name || true
-  docker run --name $container_name -p 80:80 -d $image_name
+  docker run --name $container_name -p 80:80 -v $working_dir:/share -d $image_name
 fi
