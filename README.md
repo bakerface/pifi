@@ -5,6 +5,7 @@
 Add the following to crontab to start the daemon at reboot and to check for updates every 5 minutes.
 
 ``` bash
+$ crontab -e
 */5 * * * * /root/workspace/pifi/dock
 @reboot /root/workspace/pifi/pifid wlan0 &
 ```
