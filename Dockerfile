@@ -4,9 +4,10 @@ RUN apt-get update
 RUN apt-get install -y wget dialog
 RUN wget http://node-arm.herokuapp.com/node_latest_armhf.deb
 RUN dpkg -i node_latest_armhf.deb
-COPY . /src
+ADD package.json /src/package.json
+RUN cd /src && npm install
+ADD . /src
 WORKDIR /src
-RUN npm install
 EXPOSE 80
 CMD ["npm", "start"]
 
