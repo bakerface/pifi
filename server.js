@@ -17,7 +17,10 @@ app.get('/status', function(req, res) {
 
 app.get('/networks', function(req, res) {
   exec('/share/pifi wlan0 -l', function(e, stdout) {
-    var networks = stdout.trim().split(',');
+    var networks = stdout.trim().split(',').map(function(ssid) {
+      return { ssid: ssid };
+    });
+    
     res.status(200).json(networks);
   });
 });
