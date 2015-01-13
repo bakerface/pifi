@@ -16,13 +16,22 @@ Idle
 # WiFi_Connected
 ```
 
+#### List the wireless networks
+
+``` bash
+$ pifi wlan0 -l
+Network 1,Network 2,Network 3
+
+# Network names are stored as comma-separated values
+```
+
 #### Disable the wireless interface
 
 ``` bash
 $ pifi wlan0 -i
 ```
 
-#### Host and access point
+#### Host an access point
 
 ``` bash
 $ pifi wlan0 -a "SSID" "passphrase"
