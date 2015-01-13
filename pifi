@@ -26,6 +26,7 @@ WiFiDriver="wext"
 WiFiSsid="RaspberryPi"
 WiFiPassphrase="raspberry"
 WiFiTimeout="0"
+WiFiList=""
 
 if [[ "$Interface" == "" ]]; then
   echo "Usage: $0 INTERFACE [-i | -a | -w | -s]" && exit 1
@@ -51,6 +52,7 @@ WiFiDriver="$WiFiDriver"
 WiFiSsid="$WiFiSsid"
 WiFiPassphrase="$WiFiPassphrase"
 WiFiTimeout="$WiFiTimeout"
+WiFiList="$WiFiList"
 EOF
 }
 
@@ -118,6 +120,9 @@ EOF
 
     $Hostapd -B $HostapdConfigFile &> /dev/null && rm $HostapdConfigFile
   fi
+
+  WiFiList=$(iwlist $Interface scan | grep ESSID | cut -d':' -f2 | grep -v '""' | sort | uniq | tr '\n' ',' | sed 's/"//g' | sed 's/,$/\n/g')
+  write_config
 }
 
 wifi_connect() {
@@ -187,6 +192,8 @@ elif [[ "$2" == "-i" ]]; then
   write_config 
 elif [[ "$2" == "-s" ]]; then
   echo "$State"
+elif [[ "$2" == "-l" ]]; then
+  echo "$WiFiList"
 elif [[ "$2" != "" ]]; then
   echo "Unknown option: $2" && exit 1
 elif [[ "$State" == "Idle" ]]; then
