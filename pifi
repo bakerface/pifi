@@ -29,7 +29,7 @@ WiFiTimeout="0"
 WiFiList=""
 
 if [[ "$Interface" == "" ]]; then
-  echo "Usage: $0 INTERFACE [-i | -a | -w | -s]" && exit 1
+  echo "Usage: $0 INTERFACE [-d | -i | -a | -w | -s]" && exit 1
 fi
 
 write_config() {
@@ -244,3 +244,4 @@ elif [[ "$2" != "" ]]; then
 else
   run_once
 fi
+

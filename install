@@ -1,0 +1,11 @@
+#! /bin/bash
+
+curl -O https://raw.githubusercontent.com/bakerface/pifi/master/pifi
+curl -O https://raw.githubusercontent.com/bakerface/pifi/master/rtl-hostapd
+
+chmod +x pifi
+chmod +x rtl-hostapd
+
+mv pifi /sbin/pifi
+mv rtl-hostapd /sbin/rtl-hostapd
+
