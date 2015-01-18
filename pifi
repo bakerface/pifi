@@ -72,6 +72,12 @@ disable_networking() {
 }
 
 host_ap() {
+  Unassociated=$(iwconfig $Interface | grep unassociated)
+
+  if [[ "$Unassociated" != "" ]]; then
+    disable_networking
+  fi
+
   IpAddress=$(ip_address)
 
   if [[ "$IpAddress" != "$AccessPointGateway" ]]; then
