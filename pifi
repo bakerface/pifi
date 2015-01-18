@@ -2,8 +2,8 @@
 
 ScriptDirectory="$(dirname $0)"
 Interface="$1"
-Hostapd="$ScriptDirectory/hostapd"
-ConfigFile="$ScriptDirectory/pifi-$Interface.conf"
+Hostapd="$ScriptDirectory/rtl-hostapd"
+ConfigFile="./pifi-$Interface.conf"
 DhcpdConfigFile="$ScriptDirectory/pifi-$Interface-dhcpd.conf"
 HostapdConfigFile="$ScriptDirectory/pifi-$Interface-hostapd.conf"
 WpaConfigFile="$ScriptDirectory/pifi-$Interface-wpa.conf"
@@ -55,10 +55,6 @@ WiFiTimeout="$WiFiTimeout"
 WiFiList="$WiFiList"
 EOF
 }
-
-if [[ -f $ConfigFile ]]; then
-  . $ConfigFile
-fi
 
 ip_address() {
   ifconfig $Interface | grep "inet " | awk '{print $2}' | cut -d':' -f2
@@ -183,6 +179,47 @@ wifi_connected() {
   fi
 }
 
+load_config() {
+  if [[ -f $ConfigFile ]]; then
+    . $ConfigFile
+  fi
+}
+
+run_once() {
+  if [[ "$State" == "Idle" ]]; then
+    disable_networking
+  elif [[ "$State" == "AccessPoint" ]]; then
+    State="AccessPoint_Hosting"
+    write_config
+    disable_networking
+  elif [[ "$State" == "AccessPoint_Hosting" ]]; then
+    host_ap
+  elif [[ "$State" == "WiFi" ]]; then
+    State="WiFi_Connecting"
+    WiFiTimeout=$(date -d 'today + 1 minutes' +%s)
+    write_config
+    disable_networking
+  elif [[ "$State" == "WiFi_Connecting" ]]; then
+    wifi_connect
+  elif [[ "$State" == "WiFi_Reconnecting" ]]; then
+    wifi_reconnect
+  elif [[ "$State" == "WiFi_Connected" ]]; then
+    wifi_connected
+  else
+    echo "Unknown state: $State" && exit 2
+  fi
+}
+
+run_daemon() {
+  while [ : ]; do
+    load_config
+    run_once
+    sleep 5
+  done
+}
+
+load_config
+
 if [[ "$2" == "-a" ]]; then
   State="AccessPoint"
   AccessPointSsid="$3"
@@ -200,27 +237,10 @@ elif [[ "$2" == "-s" ]]; then
   echo "$State"
 elif [[ "$2" == "-l" ]]; then
   echo "$WiFiList"
+elif [[ "$2" == "-d" ]]; then
+  run_daemon
 elif [[ "$2" != "" ]]; then
   echo "Unknown option: $2" && exit 1
-elif [[ "$State" == "Idle" ]]; then
-  disable_networking
-elif [[ "$State" == "AccessPoint" ]]; then
-  State="AccessPoint_Hosting"
-  write_config
-  disable_networking
-elif [[ "$State" == "AccessPoint_Hosting" ]]; then
-  host_ap
-elif [[ "$State" == "WiFi" ]]; then
-  State="WiFi_Connecting"
-  WiFiTimeout=$(date -d 'today + 1 minutes' +%s)
-  write_config
-  disable_networking
-elif [[ "$State" == "WiFi_Connecting" ]]; then
-  wifi_connect
-elif [[ "$State" == "WiFi_Reconnecting" ]]; then
-  wifi_reconnect
-elif [[ "$State" == "WiFi_Connected" ]]; then
-  wifi_connected
 else
-  echo "Unknown state: $State" && exit 2
+  run_once
 fi
