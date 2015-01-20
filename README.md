@@ -2,12 +2,11 @@
 **Wireless daemon for the Raspberry Pi**
 
 #### Installation
-Add the following to crontab to start the daemon at reboot and to check for updates every 5 minutes.
+Add the following to crontab to start the daemon at reboot.
 
 ``` bash
 $ crontab -e
-*/5 * * * * /root/workspace/pifi/dock
-@reboot /root/workspace/pifi/pifid wlan0 &
+@reboot pifi wlan0 -d &
 ```
 
 #### Print the state of the wireless interface
