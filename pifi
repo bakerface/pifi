@@ -61,7 +61,7 @@ ip_address() {
 }
 
 disable_networking() {
-  killall dhcpd hostapd wpa_supplicant dhcpcd &> /dev/null
+  killall dhcpd rtl-hostapd wpa_supplicant dhcpcd &> /dev/null
   ifconfig $Interface down &> /dev/null
   ifconfig $Interface 0.0.0.0 up &> /dev/null
   ifconfig $Interface down &> /dev/null
@@ -101,7 +101,7 @@ EOF
     dhcpd -cf $DhcpdConfigFile $Interface &> /dev/null && rm $DhcpdConfigFile
   fi
 
-  HostapdPid=$(pidof hostapd)
+  HostapdPid=$(pidof rtl-hostapd)
 
   if [[ "$HostapdPid" == "" ]]; then
     cat << EOF > $HostapdConfigFile
