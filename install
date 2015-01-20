@@ -1,7 +1,18 @@
 #! /bin/bash
 
-curl -O https://raw.githubusercontent.com/bakerface/pifi/master/pifi
-curl -O https://raw.githubusercontent.com/bakerface/pifi/master/rtl-hostapd
+fetch() {
+  if type wget &> /dev/null; then
+    wget $1
+  elif type curl &> /dev/null; then
+    curl -O $1
+  else
+    echo "Expected wget or curl to be installed"
+    exit 1
+  fi
+}
+
+fetch https://raw.githubusercontent.com/bakerface/pifi/master/pifi
+fetch https://raw.githubusercontent.com/bakerface/pifi/master/rtl-hostapd
 
 chmod +x pifi
 chmod +x rtl-hostapd
