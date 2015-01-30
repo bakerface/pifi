@@ -238,6 +238,7 @@ elif [[ "$2" == "-s" ]]; then
 elif [[ "$2" == "-l" ]]; then
   echo "$WiFiList"
 elif [[ "$2" == "-d" ]]; then
+  cd "$3"
   run_daemon
 elif [[ "$2" != "" ]]; then
   echo "Unknown option: $2" && exit 1
