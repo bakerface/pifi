@@ -6,7 +6,7 @@ Add the following to crontab to start the daemon at reboot.
 
 ``` bash
 $ crontab -e
-@reboot pifi wlan0 -d &
+@reboot pifi wlan0 -d /usr/sbin &
 ```
 
 #### Print the state of the wireless interface
